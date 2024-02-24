@@ -1,0 +1,8 @@
+{
+  "name": "file.txt",
+  "path": "/file.txt",
+  "entry_type": "file",
+  "size": 12,
+  "permission": "0o644",
+  "content": "Hello World!"
+}
