@@ -40,7 +40,6 @@ impl <'a>PostSDKV0<'a> {
             method: Method::GET,
             path: "/api/v0/posts.json".to_string(),
             query_params,
-            body: None,
         };
 
         let res = self.client.do_request(req).await?;
@@ -98,10 +97,9 @@ impl <'a>PostSDKV0<'a> {
                     method: Method::POST,
                     path: "/api/v0/storage/add_json".to_string(),
                     query_params: HashMap::new(),
-                    body: Some(content_json),
                 };
 
-                let res = self.client.do_request(req).await?;
+                let res = self.client.do_post_request(req, content_json).await?;
                 let data = res
                     .text()
                     .await
@@ -122,7 +120,6 @@ impl <'a>PostSDKV0<'a> {
             method: Method::POST,
             path: "/api/v0/ipfs/pubsub/pub".to_string(),
             query_params: HashMap::new(),
-            body: None,
         };
 
         let res = self.client.do_post_request(req, body).await?;

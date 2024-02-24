@@ -62,10 +62,6 @@ impl HttpClient {
             reqwest::header::HeaderValue::from_static("application/json"),
         );
 
-        if let Some(body) = req.body {
-            http_req.body_mut().replace(body.into());
-        }
-
         let res = self.requester.execute(http_req).await?;
 
         match res.status().as_u16() < 200 || res.status().as_u16() >= 300 {

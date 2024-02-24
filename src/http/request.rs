@@ -6,7 +6,6 @@ pub struct Request {
     pub method: Method,
     pub path: String,
     pub query_params: HashMap<String, String>,
-    pub body: Option<String>,
 }
 
 impl Request {
