@@ -4,7 +4,7 @@
     {
       "name": "file.txt",
       "path": "/file.txt",
-      "entry_type": "file",
+      "type": "file",
       "gid": 0,
       "uid": 0,
       "created_at": 1708731936000,
