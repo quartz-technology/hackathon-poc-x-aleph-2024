@@ -149,7 +149,7 @@ mod tests {
         let expected = fs::read_to_string(expected_path).unwrap();
         let expected_fs: FSTree = serde_json::from_str(&expected).unwrap();
 
-        assert_eq!(expected_fs.root, fs.root);
+        assert_eq!(expected_fs.root, fs.root, "Root path is not the same");
         compare_entries(expected_fs.get_entries(), fs.get_entries());
     }
 
@@ -166,13 +166,30 @@ mod tests {
         let expected = fs::read_to_string(expected_path).unwrap();
         let expected_fs: FSTree = serde_json::from_str(&expected).unwrap();
 
-        assert_eq!(expected_fs.root, fs.root);
+        assert_eq!(expected_fs.root, fs.root, "Root path is not the same");
         compare_entries(expected_fs.get_entries(), fs.get_entries());
     }
 
     #[test]
     fn dir_with_one_level_depth() {
         let test_dir_path = format!("{TEST_DATA_DIR}/dir_with_one_level_depth");
+
+        let fs_path = format!("{test_dir_path}/filesystem");
+        let mut fs = FSTree::new(fs_path.as_str());
+
+        get_tree(&mut fs, fs_path.as_str());
+
+        let expected_path = format!("{test_dir_path}/expected.json");
+        let expected = fs::read_to_string(expected_path).unwrap();
+        let expected_fs: FSTree = serde_json::from_str(&expected).unwrap();
+
+        assert_eq!(expected_fs.root, fs.root, "Root path is not the same");
+        compare_entries(expected_fs.get_entries(), fs.get_entries());
+    }
+
+    #[test]
+    fn dir_with_multi_level_depth() {
+        let test_dir_path = format!("{TEST_DATA_DIR}/dir_with_multi_level_depth");
 
         let fs_path = format!("{test_dir_path}/filesystem");
         let mut fs = FSTree::new(fs_path.as_str());
