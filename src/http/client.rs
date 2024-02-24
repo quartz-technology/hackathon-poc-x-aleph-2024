@@ -1,4 +1,5 @@
 use reqwest::{Client, ClientBuilder, Response, StatusCode};
+use serde::Serialize;
 use thiserror::Error;
 use url::{ParseError, Url};
 
@@ -54,8 +55,34 @@ impl HttpClient {
 
     pub async fn do_request(&self, req: Request) -> Result<Response, HttpClientError> {
         let url = req.get_url(self.api_url.as_str())?;
-        let http_req = reqwest::Request::new(req.method, url);
+        let mut http_req = reqwest::Request::new(req.method, url);
+
+        http_req.headers_mut().insert(
+            "Content-Type",
+            reqwest::header::HeaderValue::from_static("application/json"),
+        );
+
         let res = self.requester.execute(http_req).await?;
+
+        match res.status().as_u16() < 200 || res.status().as_u16() >= 300 {
+            true => {
+                let status = res.status();
+                let data = res.text().await?;
+
+                Err(HttpClientError::ResponseError { status, data })
+            }
+            false => Ok(res),
+        }
+    }
+
+    pub async fn do_post_request<T: Serialize>(&self, req: Request, body: T) -> Result<Response, HttpClientError> {
+        let url = req.get_url(self.api_url.as_str())?;
+
+        let res = reqwest::Client::new()
+            .post(url)
+            .json(&body)
+            .send()
+            .await?;
 
         match res.status().as_u16() < 200 || res.status().as_u16() >= 300 {
             true => {

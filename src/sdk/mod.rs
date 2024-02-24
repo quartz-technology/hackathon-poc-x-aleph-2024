@@ -4,6 +4,7 @@ use self::{post::PostSDK, store::StoreSDK};
 
 pub mod post;
 pub mod store;
+pub mod common;
 
 pub struct AlephSDK<'a> {
     post: PostSDK<'a>,
