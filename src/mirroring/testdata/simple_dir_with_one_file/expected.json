@@ -1,8 +1,15 @@
 {
-  "name": "file.txt",
-  "path": "/file.txt",
-  "entry_type": "file",
-  "size": 12,
-  "permission": "0o644",
-  "content": "Hello World!"
+  "root": "./src/mirroring/testdata/simple_dir_with_one_file/filesystem",
+  "entries": [
+    {
+      "name": "file.txt",
+      "path": "/file.txt",
+      "entry_type": "file",
+      "gid": 0,
+      "uid": 0,
+      "created_at": 1708731936000,
+      "size": 12,
+      "permission": "100644"
+    }
+  ]
 }

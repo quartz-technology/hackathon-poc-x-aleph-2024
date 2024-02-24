@@ -1,0 +1,35 @@
+{
+  "root": "./src/mirroring/testdata/simple_dir_with_multiple_files/filesystem",
+  "entries": [
+    {
+      "name": "file.txt",
+      "path": "/file.txt",
+      "entry_type": "file",
+      "gid": 0,
+      "uid": 0,
+      "created_at": 1708731936000,
+      "size": 12,
+      "permission": "100644"
+    },
+    {
+      "name": "file_2.txt",
+      "path": "/file_2.txt",
+      "entry_type": "file",
+      "gid": 0,
+      "uid": 0,
+      "created_at": 1708731936000,
+      "size": 12,
+      "permission": "100644"
+    },
+    {
+      "name": "README.md",
+      "path": "/README.md",
+      "entry_type": "file",
+      "gid": 0,
+      "uid": 0,
+      "created_at": 1708731936000,
+      "size": 14,
+      "permission": "100644"
+    }
+  ]
+}

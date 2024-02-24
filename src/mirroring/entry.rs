@@ -1,19 +1,47 @@
-use super::EntryType;
+use serde::{Deserialize, Serialize};
 
-pub trait AToAny: 'static {
-    fn as_any(&self) -> &dyn std::any::Any;
+use super::{Directory, EntryType, File};
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
+#[serde(untagged)]
+pub enum Entry {
+    File(File),
+    Directory(Directory),
 }
 
-impl<T: 'static> AToAny for T {
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
+impl Entry {
+    pub fn path(&self) -> &str {
+        match self {
+            Entry::File(file) => &file.path,
+            Entry::Directory(dir) => &dir.path,
+        }
     }
-}
 
-pub trait Entry: std::fmt::Debug + AToAny {
-    fn path(&self) -> &str;
+    pub fn set_path(&mut self, path: String) {
+        match self {
+            Entry::File(file) => file.path = path,
+            Entry::Directory(dir) => dir.path = path,
+        }
+    }
 
-    fn set_path(&mut self, path: String);
+    pub fn entry_type(&self) -> &EntryType {
+        match self {
+            Entry::File(file) => &file.entry_type,
+            Entry::Directory(dir) => &dir.entry_type,
+        }
+    }
 
-    fn entry_type(&self) -> EntryType;
+    pub fn name(&self) -> &str {
+        match self {
+            Entry::File(file) => &file.name,
+            Entry::Directory(dir) => &dir.name,
+        }
+    }
+
+    pub fn permission(&self) -> &str {
+        match self {
+            Entry::File(file) => &file.permission,
+            Entry::Directory(dir) => &dir.permission,
+        }
+    }
 }
