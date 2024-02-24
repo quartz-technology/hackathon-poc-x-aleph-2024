@@ -2,6 +2,15 @@ use serde::{Deserialize, Serialize};
 
 use super::{directory::Directory, entry::Entry, file::File};
 
+/// A File System Tree abstraction.
+///
+/// It stores the root path of the host file system and a list of entries with
+/// essential metadatas to mirror the host tree.
+///
+/// The entries are stored as a list of `Entry` which can be either a `File` or
+/// a `Directory`.
+///
+
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct FSTree<'a> {
     root: &'a str,
@@ -9,7 +18,18 @@ pub struct FSTree<'a> {
     entries: Vec<Entry>,
 }
 
+/// The `FSTree` implementation.
+/// 
+/// When reconstructing the file system tree, the root path is used to locate
+/// the original path in the host.  
+/// The recommanding way to proceed is to first call `get_dirs` to create the 
+/// tree and then `get_files` to load the files' content sequentially and
+/// avoid hitting memory limit.
+///
+/// This implementation is not optimal and should be improved for large amount
+/// of files.
 impl<'a> FSTree<'a> {
+    /// Creates a new `FSTree`.
     pub fn new(root: &'a str) -> Self {
         FSTree {
             root,
@@ -17,6 +37,7 @@ impl<'a> FSTree<'a> {
         }
     }
 
+    /// Adds a new entry to the `FSTree`.
     pub fn add_entry(&mut self, mut entry: Entry) {
         if entry.path().starts_with(self.root) {
             entry.set_path(entry.path().strip_prefix(self.root).unwrap().to_string());
@@ -25,10 +46,12 @@ impl<'a> FSTree<'a> {
         self.entries.push(entry);
     }
 
+    /// Returns the list of entries in the `FSTree`.
     pub fn get_entries(&self) -> &Vec<Entry> {
         &self.entries
     }
 
+    /// Returns the list of directories in the `FSTree`.
     pub fn get_dirs(&self) -> Vec<&Directory> {
         self.entries
             .iter()
@@ -39,6 +62,7 @@ impl<'a> FSTree<'a> {
             .collect()
     }
 
+    /// Returns the list of files in the `FSTree`.
     pub fn get_files(&self) -> Vec<&File> {
         self.entries
             .iter()
@@ -60,6 +84,7 @@ mod tests {
 
     const TEST_DATA_DIR: &str = "./src/mirroring/testdata";
 
+    /// Mock the implementation of a file system reader.
     fn get_tree(fs: &mut FSTree, path: &str) {
         let test_dir = fs::read_dir(path).unwrap();
 
@@ -107,6 +132,7 @@ mod tests {
         });
     }
 
+    /// Compare some fields of two vectors of entries.
     fn compare_entries(expected: &Vec<Entry>, actual: &Vec<Entry>) {
         assert_eq!(
             expected.len(),
