@@ -6,9 +6,15 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-reqwest = "0.11.24"
+alloy-primitives = "0.6.3"
+ethers = "2.0.13"
+ethers-signers = "2.0.13"
+hex = "0.4.3"
+reqwest = { version = "0.11.24", features = ["json"]}
 serde = { version = "1.0.197", features = ["derive"] }
 serde_json = "1.0.114"
+sha2 = "0.10.8"
 serde_millis = "0.1.1"
 thiserror = "1.0.57"
+tokio = { version = "1.36.0", features = ["full"] }
 url = "2.5.0"
