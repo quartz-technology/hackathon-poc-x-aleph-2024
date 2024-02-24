@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use super::{Directory, EntryType, File};
+use super::{sym_link::SymLink, Directory, EntryType, File};
 
 /// An entry in the mirroring.
 ///
@@ -13,6 +13,7 @@ use super::{Directory, EntryType, File};
 #[serde(untagged)]
 pub enum Entry {
     File(File),
+    SymLink(SymLink),
     Directory(Directory),
 }
 
@@ -24,6 +25,7 @@ impl Entry {
         match self {
             Entry::File(file) => &file.path,
             Entry::Directory(dir) => &dir.path,
+            Entry::SymLink(link) => &link.path,
         }
     }
 
@@ -32,6 +34,7 @@ impl Entry {
         match self {
             Entry::File(file) => file.path = path,
             Entry::Directory(dir) => dir.path = path,
+            Entry::SymLink(link) => link.path = path,
         }
     }
 
@@ -40,6 +43,7 @@ impl Entry {
         match self {
             Entry::File(file) => &file.entry_type,
             Entry::Directory(dir) => &dir.entry_type,
+            Entry::SymLink(link) => &link.entry_type,
         }
     }
 
@@ -48,6 +52,7 @@ impl Entry {
         match self {
             Entry::File(file) => &file.name,
             Entry::Directory(dir) => &dir.name,
+            Entry::SymLink(link) => &link.name,
         }
     }
 
@@ -56,6 +61,7 @@ impl Entry {
         match self {
             Entry::File(file) => &file.permission,
             Entry::Directory(dir) => &dir.permission,
+            Entry::SymLink(link) => &link.permission,
         }
     }
 }

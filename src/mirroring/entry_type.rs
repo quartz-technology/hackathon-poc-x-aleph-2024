@@ -13,4 +13,7 @@ pub enum EntryType {
 
     #[serde(rename = "directory")]
     Directory,
+
+    #[serde(rename = "symlink")]
+    SymLink,
 }

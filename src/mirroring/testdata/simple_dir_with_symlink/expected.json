@@ -1,0 +1,25 @@
+{
+  "root": "./src/mirroring/testdata/simple_dir_with_symlink/filesystem",
+  "entries": [
+    {
+      "name": "file.txt",
+      "path": "/file.txt",
+      "type": "file",
+      "gid": 0,
+      "uid": 0,
+      "created_at": 1708731936000,
+      "size": 12,
+      "permission": "100644"
+    },
+    {
+      "name": "sym_file.txt",
+      "path": "/sym_file.txt",
+      "type": "symlink",
+      "gid": 0,
+      "uid": 0,
+      "created_at": 1708731936000,
+      "permission": "120755",
+      "link_to": "/file.txt"
+    }
+  ]
+}
