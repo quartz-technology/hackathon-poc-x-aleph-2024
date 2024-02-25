@@ -33,7 +33,7 @@ impl PostSDKV0 {
         PostSDKV0 { client }
     }
 
-    pub async fn list<T: serde::de::DeserializeOwned + Debug>(&self, params: ListPostsRequest) -> Result<ListPostsResponse<T>, PostSDKV0Error> {
+    pub async fn list<T: serde::de::DeserializeOwned + Debug + Clone>(&self, params: ListPostsRequest) -> Result<ListPostsResponse, PostSDKV0Error> {
         let query_params = params.query_params();
         
         let req = Request {
@@ -45,7 +45,7 @@ impl PostSDKV0 {
         let res = self.client.do_request(req).await?;
 
         let data = res
-            .json::<ListPostsResponse<T>>()
+            .json::<ListPostsResponse>()
             .await
             .map_err(PostSDKV0Error::ResponseDeserializationError)?;
 
