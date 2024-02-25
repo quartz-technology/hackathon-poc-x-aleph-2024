@@ -1,15 +1,15 @@
 use crate::http::HttpClient;
 
-use self::v0::PostSDKV0;
+use self::v0::*;
 
 pub mod v0;
 
-pub struct PostSDK<'a> {
-    v0: PostSDKV0<'a>,
+pub struct PostSDK {
+    v0: PostSDKV0,
 }
 
-impl <'a>PostSDK<'a> {
-    pub fn new(client: &'a HttpClient) -> Self {
+impl PostSDK {
+    pub fn new(client: HttpClient) -> Self {
         PostSDK {
             v0: PostSDKV0::new(client),
         }

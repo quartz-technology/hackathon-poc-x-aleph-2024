@@ -6,6 +6,7 @@ mod mirroring;
 
 use clap::Parser;
 use fuser::MountOption;
+use sdk::AlephSDK;
 
 fn main() {
     let args = cli::Args::parse();
@@ -19,5 +20,10 @@ fn main() {
         options.push(MountOption::AllowRoot);
     }
 
-    fuser::mount2(core::FS0X::new(), args.mount_point, &options).unwrap();
+    let client = http::HttpClient::new().unwrap();
+    let sdk = sdk::AlephSDK::new(client);
+
+    let fs0x = core::FS0X::new(sdk);
+
+    fuser::mount2(fs0x, args.mount_point, &options).unwrap();
 }
