@@ -15,7 +15,7 @@ fs0x - pronounced "f-s-x" - is a simple filesystem built using the Aleph acting 
 
 ### Requirements
 
-- [Rust](https://www.rust-lang.org/): The perfect program for programs that interact with the Kernel
+- [Rust](https://www.rust-lang.org/): The perfect program for programs that interact with both the Kernel and the Web.
 - [Docker](https://www.docker.com/): A container manager used to simplify the deployment of fs0x.
 
 ### Run using [Docker](https://www.docker.com/)
@@ -47,7 +47,7 @@ docker run --name fs0x -it --privileged --rm -v $PWD:/app -w /app fs0x bash
 In another terminal, start a shell in the same container
 
 ```shell
-docker exec -it --privileged fs0x /bin/bash
+docker exec -it --privileged <fs0x_CONTAINER_ID> /bin/bash
 
 # Create a temporary directory in your container
 cd /tmp
@@ -59,10 +59,10 @@ mkdir test
 In the first terminal, start the daemon by mounting the filesystem you want to synchronize.
 
 ```shell
-cargo run -- /tmp/test --id <my-id>  
+cargo run -- /tmp/test --id <storage_id>  
 ```
 
-> 💡 The `--id` option is the identifier for your session, please use the same on 
+> 💡 The `--id` option is the identifier for your storage session, please use the same on 
 > the machine you want to synchronize with.
 
 5. Create a peer
