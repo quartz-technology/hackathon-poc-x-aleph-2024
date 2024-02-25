@@ -29,16 +29,18 @@ pub struct FS0X {
     file_handles: AtomicU64,
     asdk: AlephSDK,
     fs_tree: FSTree,
+    id: String,
 }
 
 impl FS0X {
     /// Create a new FS0X filesystem instance
-    pub fn new(asdk: AlephSDK) -> Self {
+    pub fn new(asdk: AlephSDK, id: String) -> Self {
         Self {
             inodes: BTreeMap::new(),
             file_handles: AtomicU64::new(1),
             asdk: asdk,
-            fs_tree: FSTree::new("/"),
+            fs_tree: FSTree::new("/".to_string()),
+            id: id,
         }
     }
 
@@ -64,14 +66,121 @@ impl FS0X {
         let account_address = signer.get_address();
 
         let params = ListPostsRequest::default()
-            .with_channels(vec![format!("fs0x-{}", account_address)]);
+            .with_channels(vec![format!("fs0x-{}-{}", account_address, self.id)]);
 
         let mut rt = Runtime::new().unwrap();
         let res = rt.block_on(self.asdk.post().v0().list::<String>(params));
 
         match res {
-            Ok(posts) => {
-                println!("FS TREE FETCHED: {:?}", posts);
+            Ok(data) => {
+                println!("FS TREE FETCHED: {:?}\n", data);
+
+                if let Some(post) = data.posts.first() {
+                    let post_content = post.content.clone();
+                    let fs_tree: FSTree = serde_json::from_str(&post_content).unwrap();
+                    self.fs_tree = fs_tree;
+
+                    for entry in self.fs_tree.entries.iter() {
+                        let mut found = false;
+                        for inode in self.inodes.values() {
+                            if self.get_full_path(inode.inode) == entry.path() {
+                                found = true;
+                                break;
+                            }
+                        }
+
+                        if !found {
+                            let new_inode = self.inodes.last_key_value().unwrap().0 + 1;
+                            let path = std::path::Path::new(entry.path());
+
+                            let mut parent_path = match path.parent() {
+                                Some(parent) => parent.to_str().unwrap().to_string(),
+                                None => {
+                                    println!("No parent found");
+                                    return;
+                                }
+                            };
+
+                            if !parent_path.ends_with('/') {
+                                parent_path.push('/');
+                            }
+
+                            println!("TO CHECK :::: PARENT PATH: {:?}", parent_path);
+
+                            let pinode = match self.get_inode_from_path(&parent_path) {
+                                Some(d) => d,
+                                None => {
+                                    println!("No parent found");
+                                    return;
+                                }
+                            };
+
+                            match self.inodes.get_mut(&pinode.inode) {
+                                Some(attr) => {
+                                    match &mut attr.kind {
+                                        FileKind::Directory(entries) => {
+                                            entries.push(new_inode);
+                                        },
+                                        _ => {
+                                            println!("No parent found");
+                                            return;
+                                        }
+                                    }
+                                },
+                                None => {
+                                    println!("No parent found");
+                                    return;
+                                }
+                            }
+
+                            match entry.entry_type() {
+                                EntryType::File => {
+                                    let new_attr = InodeAttributes {
+                                        inode: new_inode,
+                                        pinode: Some(pinode.inode),
+                                        fname: entry.name().to_string(),
+                                        open_file_handles: 0,
+                                        size: 0,
+                                        last_accessed: std::time::SystemTime::now(),
+                                        last_modified: std::time::SystemTime::now(),
+                                        last_metadata_changed: std::time::SystemTime::now(),
+                                        kind: FileKind::File,
+                                        mode: u16::from_str_radix(&entry.permission(), 8).unwrap(),
+                                        hardlinks: 1,
+                                        uid: 0,
+                                        gid: 0,
+                                        xattrs: Default::default(),
+                                    };
+                                    println!("NEW FILE: {:?}", entry.name());
+                                    self.inodes.insert(new_inode, new_attr);
+                                },
+                                EntryType::Directory => {
+                                    let new_attr = InodeAttributes {
+                                        inode: new_inode,
+                                        pinode: Some(pinode.inode),
+                                        fname: entry.name().to_string(),
+                                        open_file_handles: 0,
+                                        size: 0,
+                                        last_accessed: std::time::SystemTime::now(),
+                                        last_modified: std::time::SystemTime::now(),
+                                        last_metadata_changed: std::time::SystemTime::now(),
+                                        kind: FileKind::Directory(vec![]),
+                                        mode: u16::from_str_radix(&entry.permission(), 8).unwrap(),
+                                        hardlinks: 1,
+                                        uid: 0,
+                                        gid: 0,
+                                        xattrs: Default::default(),
+                                    };
+                                    println!("NEW DIR: {:?}", entry.name());
+                                    self.inodes.insert(new_inode, new_attr);
+                                },
+                                _ => {},
+                            }
+                        }
+                    }
+
+                    println!("NEW FS TREE: {:?}\n", self.fs_tree);
+                }
             },
             Err(e) => {
                 println!("FS TREE FETCH ERROR: {:?}", e);
@@ -104,6 +213,16 @@ impl FS0X {
         }
 
         path
+    }
+
+    pub fn get_inode_from_path(&self, path: &str) -> Option<InodeAttributes> {
+        for inode in self.inodes.values() {
+            if self.get_full_path(inode.inode) == path {
+                return Some(inode.clone());
+            }
+        }
+
+        None
     }
 }
 
@@ -355,7 +474,7 @@ impl Filesystem for FS0X {
 
         let params = CreatePostRequest {
             signer: signer,
-            channel: format!("fs0x-{}", account_address),
+            channel: format!("fs0x-{}-{}", account_address, self.id),
             custom_type: "fs_tree".to_string(),
             item_type: sdk::common::ItemType::Inline,
             content: fs_tree_json.clone(),
@@ -469,7 +588,7 @@ impl Filesystem for FS0X {
 
         let params = CreatePostRequest {
             signer: signer,
-            channel: format!("fs0x-{}", account_address),
+            channel: format!("fs0x-{}-{}", account_address, self.id),
             custom_type: "fs_tree".to_string(),
             item_type: sdk::common::ItemType::Inline,
             content: fs_tree_json.clone(),

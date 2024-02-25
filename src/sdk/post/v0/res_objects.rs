@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::sdk::common::{ItemType, MessageChain};
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct PostMessage<T: Debug> {
+pub struct PostMessage<T: Debug + Clone> {
     /// The channel where the message was received.
     pub channel: String,
     /// The time the message was received.
@@ -30,7 +30,7 @@ pub struct PostMessage<T: Debug> {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ListPostsResponse<T: Debug> {
+pub struct ListPostsResponse {
     /// The list of posts.
-    pub posts: Vec<PostMessage<T>>,
+    pub posts: Vec<PostMessage<String>>,
 }
