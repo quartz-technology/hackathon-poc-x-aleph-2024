@@ -6,25 +6,19 @@ pub mod post;
 pub mod store;
 pub mod common;
 
-pub struct AlephSDK<'a> {
-    post: PostSDK<'a>,
-    store: StoreSDK<'a>,
+pub struct AlephSDK {
+    post: PostSDK,
 }
 
-impl <'a>AlephSDK<'a> {
-    pub fn new(client: &'a HttpClient) -> Self {
+impl AlephSDK {
+    pub fn new(client: HttpClient) -> Self {
         AlephSDK {
             post: PostSDK::new(client),
-            store: StoreSDK::new(client),
         }
     }
 
     pub fn post(&self) -> &PostSDK {
         &self.post
-    }
-
-    pub fn store(&self) -> &StoreSDK {
-        &self.store
     }
 }
 
@@ -36,6 +30,6 @@ mod tests {
     #[test]
     fn it_builds_the_sdk() {
         let client = HttpClient::new().unwrap();
-        let _sdk = AlephSDK::new(&client);
+        let _sdk = AlephSDK::new(client);
     }
 }

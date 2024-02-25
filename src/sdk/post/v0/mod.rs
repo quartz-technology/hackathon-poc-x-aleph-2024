@@ -1,5 +1,5 @@
-mod req_objects;
-mod res_objects;
+pub mod req_objects;
+pub mod res_objects;
 
 use std::{collections::HashMap, fmt::Debug, str::FromStr, time::{SystemTime, UNIX_EPOCH}};
 
@@ -24,12 +24,12 @@ pub enum PostSDKV0Error {
     MessageSignError(#[from] MessageSignerError),
 }
 
-pub struct PostSDKV0<'a> {
-    client: &'a HttpClient,
+pub struct PostSDKV0 {
+    client: HttpClient,
 }
 
-impl <'a>PostSDKV0<'a> {
-    pub fn new(client: &'a HttpClient) -> Self {
+impl PostSDKV0 {
+    pub fn new(client: HttpClient) -> Self {
         PostSDKV0 { client }
     }
 
@@ -52,7 +52,7 @@ impl <'a>PostSDKV0<'a> {
         Ok(data)
     }
 
-    pub async fn create<T: Serialize + Copy + Debug>(&self, params: &CreatePostRequest<T>) -> Result<(), PostSDKV0Error> {
+    pub async fn create<T: Serialize + Clone + Debug>(&self, params: &CreatePostRequest<T>) -> Result<(), PostSDKV0Error> {
         let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards ???").as_secs();
 
         let addr = Address::from_str(params.signer.get_address().as_str()).expect("parse l'addresse non ???").to_checksum(None);
@@ -60,7 +60,7 @@ impl <'a>PostSDKV0<'a> {
         let post_content = PostContent {
             custom_type: params.custom_type.clone(),
             address: addr.clone(),
-            content: params.content,
+            content: params.content.clone(),
             time: timestamp as f64,
         };
 
@@ -152,7 +152,7 @@ mod tests {
     #[tokio::test]
     async fn it_lists_posts() {
         let client = HttpClient::new().unwrap();
-        let sdk = PostSDKV0::new(&client);
+        let sdk = PostSDKV0::new(client);
 
         let params = ListPostsRequest::default().with_hashes(vec![
             "b33110b8c8e9d8d6dc67813007c5b8318ed3720776c4ee6431cc60ee4b0d18ad".to_string(),
@@ -170,7 +170,7 @@ mod tests {
     #[tokio::test]
     async fn it_creates_post() {
         let client = HttpClient::new().unwrap();
-        let sdk = PostSDKV0::new(&client);
+        let sdk = PostSDKV0::new(client);
 
         let signer = DefaultEthereumSigner::new("0xdcf2cbdd171a21c480aa7f53d77f31bb102282b3ff099c78e3118b37348c72f7".to_string()).unwrap();
         let params = CreatePostRequest {
