@@ -14,20 +14,31 @@ use std::sync::atomic::AtomicU64;
 use std::collections::BTreeMap;
 use serde::{Serialize, Deserialize};
 
+use crate::mirroring::{Directory, Entry, EntryType, FSTree, File};
+use crate::sdk::common::{DefaultEthereumSigner, MessageSigner};
+use crate::sdk::post::v0::req_objects::{CreatePostRequest, ListPostsRequest};
+use crate::sdk::{self, AlephSDK};
+use serde_json;
+use tokio::runtime::Runtime;
+
 const TTL: Duration = Duration::from_secs(1);
 
 /// Struct that contains the filesystem inodes and fd handles counter
 pub struct FS0X {
     inodes: BTreeMap<Inode, InodeAttributes>,
     file_handles: AtomicU64,
+    asdk: AlephSDK,
+    fs_tree: FSTree,
 }
 
 impl FS0X {
     /// Create a new FS0X filesystem instance
-    pub fn new() -> Self {
+    pub fn new(asdk: AlephSDK) -> Self {
         Self {
             inodes: BTreeMap::new(),
             file_handles: AtomicU64::new(1),
+            asdk: asdk,
+            fs_tree: FSTree::new("/"),
         }
     }
 
@@ -46,6 +57,26 @@ impl FS0X {
         }
 
         return Err(libc::ENOENT);
+    }
+
+    fn sync(&mut self) {
+        let signer = DefaultEthereumSigner::new("0xdcf2cbdd171a21c480aa7f53d77f31bb102282b3ff099c78e3118b37348c72f7".to_string()).unwrap();
+        let account_address = signer.get_address();
+
+        let params = ListPostsRequest::default()
+            .with_channels(vec![format!("fs0x-{}", account_address)]);
+
+        let mut rt = Runtime::new().unwrap();
+        let res = rt.block_on(self.asdk.post().v0().list::<String>(params));
+
+        match res {
+            Ok(posts) => {
+                println!("FS TREE FETCHED: {:?}", posts);
+            },
+            Err(e) => {
+                println!("FS TREE FETCH ERROR: {:?}", e);
+            }
+        }
     }
 
     /// Get the full path of a file or directory as an inode
@@ -104,6 +135,8 @@ impl Filesystem for FS0X {
     }
 
     fn lookup(&mut self, _req: &Request, parent: u64, name: &OsStr, reply: ReplyEntry) {
+        self.sync();
+
         if name.to_str() == Some(".") {
             match self.inodes.get(&parent) {
                 Some(attr) => {
@@ -236,6 +269,8 @@ impl Filesystem for FS0X {
         offset: i64,
         mut reply: ReplyDirectory,
     ) {
+        self.sync();
+
         if let Some(attr) = self.inodes.get(&ino) {
             if let FileKind::Directory(entries) = &attr.kind {
                 for (i, inode) in entries.iter().enumerate().skip(offset as usize) {
@@ -304,10 +339,39 @@ impl Filesystem for FS0X {
         self.inodes.insert(new_inode, new_attr.clone());
         let fd = self.file_handles.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
 
-        println!("TOUCH FILE: {}", self.get_full_path(new_inode));
+        let f_full_path = self.get_full_path(new_inode);
+        println!("TOUCH FILE: {}", f_full_path);
 
         // TODO: here API call to create file in the cloud
         // the new file path requested is available in `self.get_full_path(new_inode)`
+        let new_file = File::new(new_attr.fname.clone(), f_full_path, 0, format!("{:o}", new_attr.mode), new_attr.last_modified, new_attr.gid, new_attr.uid);
+        self.fs_tree.add_entry(Entry::File(new_file));
+
+        let fs_tree_json = serde_json::to_string(&self.fs_tree).unwrap();
+        println!("FS_TREE: {}", fs_tree_json);
+
+        let signer = DefaultEthereumSigner::new("0xdcf2cbdd171a21c480aa7f53d77f31bb102282b3ff099c78e3118b37348c72f7".to_string()).unwrap();
+        let account_address = signer.get_address();
+
+        let params = CreatePostRequest {
+            signer: signer,
+            channel: format!("fs0x-{}", account_address),
+            custom_type: "fs_tree".to_string(),
+            item_type: sdk::common::ItemType::Inline,
+            content: fs_tree_json.clone(),
+        };
+        let mut rt = Runtime::new().unwrap();
+        let res = rt.block_on(self.asdk.post().v0().create(&params));
+
+        match res {
+            Ok(_) => {
+                println!("FS_TREE POSTED");
+            },
+            Err(e) => {
+                println!("FS_TREE POST ERROR: {:?}", e);
+            }
+            
+        }
 
         reply.created(
             &TTL,
@@ -387,10 +451,41 @@ impl Filesystem for FS0X {
     
         self.inodes.insert(new_inode, new_attr.clone());
 
-        println!("TOUCH FOLDER: {}", self.get_full_path(new_inode));
+        let f_full_path = self.get_full_path(new_inode);
+        println!("TOUCH FOLDER: {}", f_full_path);
 
-        // TODO: here API call to create folder in the cloud
-        // the new folder path requested is available in `self.get_full_path(new_inode)`
+        // TODO: here API call to create file in the cloud
+        // the new file path requested is available in `self.get_full_path(new_inode)`
+
+
+        let new_dir = Directory::new(new_attr.fname.clone(), f_full_path, format!("{:o}", new_attr.mode), new_attr.last_modified, new_attr.gid, new_attr.uid);
+        self.fs_tree.add_entry(Entry::Directory(new_dir));
+
+        let fs_tree_json = serde_json::to_string(&self.fs_tree).unwrap();
+        println!("FS_TREE: {}", fs_tree_json);
+
+        let signer = DefaultEthereumSigner::new("0xdcf2cbdd171a21c480aa7f53d77f31bb102282b3ff099c78e3118b37348c72f7".to_string()).unwrap();
+        let account_address = signer.get_address();
+
+        let params = CreatePostRequest {
+            signer: signer,
+            channel: format!("fs0x-{}", account_address),
+            custom_type: "fs_tree".to_string(),
+            item_type: sdk::common::ItemType::Inline,
+            content: fs_tree_json.clone(),
+        };
+        let mut rt = Runtime::new().unwrap();
+        let res = rt.block_on(self.asdk.post().v0().create(&params));
+
+        match res {
+            Ok(_) => {
+                println!("FS_TREE POSTED");
+            },
+            Err(e) => {
+                println!("FS_TREE POST ERROR: {:?}", e);
+            }
+            
+        }
 
         reply.entry(&TTL, &(&new_attr).into(), 0);
     }

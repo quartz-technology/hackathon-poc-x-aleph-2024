@@ -5,6 +5,7 @@ mod file;
 mod directory;
 mod sym_link;
 
+pub use entry::Entry;
 pub use entry_type::EntryType;
 pub use file::File;
 pub use directory::Directory;
