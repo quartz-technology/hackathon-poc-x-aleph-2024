@@ -7,11 +7,11 @@ pub struct Args {
     #[clap(required = true)]
     pub mount_point: String,
 
-    /// Automatically unmount on process exit
-    #[clap(long, short)]
-    pub unmount_at_exit: bool,
-
     /// Allow root user to access filesystem
     #[clap(long, short)]
     pub root_access: bool,
+
+    /// Unique ID for FSTree identification
+    #[clap(long, short)]
+    pub id: String,
 }
