@@ -11,9 +11,9 @@ use super::{directory::Directory, entry::Entry, file::File, sym_link::SymLink};
 /// `Directory` or `Symlink`.
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct FSTree {
-    root: &'static str,
+    root: String,
 
-    entries: Vec<Entry>,
+    pub entries: Vec<Entry>,
 }
 
 /// The `FSTree` implementation.
@@ -29,7 +29,7 @@ pub struct FSTree {
 /// of files.
 impl FSTree {
     /// Creates a new `FSTree`.
-    pub fn new(root: &'static str) -> Self {
+    pub fn new(root: String) -> Self {
         FSTree {
             root,
             entries: Vec::new(),
@@ -37,8 +37,8 @@ impl FSTree {
     }
 
     pub fn truncate_root(&self, path: &str) -> String {
-        if path.starts_with(self.root) {
-            return path.strip_prefix(self.root).unwrap().to_string();
+        if path.starts_with(self.root.as_str()) {
+            return path.strip_prefix(self.root.as_str()).unwrap().to_string();
         }
 
         // If the path does not start with the root, return the path as is with the
